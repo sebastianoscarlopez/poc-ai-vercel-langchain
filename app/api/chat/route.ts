@@ -1,9 +1,24 @@
 import { NextRequest } from 'next/server';
 import { Message as VercelChatMessage, StreamingTextResponse } from 'ai';
  
-import { ChatOpenAI } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { BytesOutputParser } from '@langchain/core/output_parsers';
+
+import { ChatOpenAI } from "@langchain/openai";
+import { Ollama } from "@langchain/community/llms/ollama";
+
+const llmOllama = new Ollama({
+  baseUrl: "http://localhost:11434", // Default value
+  model: "stablelm-zephyr",
+  temperature: 0.01,
+});
+
+
+const llmOpenAI = new ChatOpenAI({
+  temperature: 0.2,
+});
+
+const model = llmOllama;
 
 export const runtime = 'edge';
  
@@ -14,31 +29,14 @@ export const runtime = 'edge';
 const formatMessage = (message: VercelChatMessage) => {
   return `${message.role}: ${message.content}`;
 };
- 
-const TEMPLATE = `Tengo estas diez categorias de gastos.
-export const CATEGORIES: {{ [key: string]: string }} = {{
-  SAVE: 'Save',
-  RENT: 'Rent',
-  FOOD: 'Food',
-  SUBSCRIPTIONS: 'Subscriptions',
-  TRANSPORT: 'Transport',
-  CLOTHES: 'Clothes',
-  HEALTH: 'Health',
-  TRAVEL: 'Travel',
-  CAR: 'Car',
-  DINNING_OUT: 'Dinning out',
-  GIFTS: 'Gifts',
-  OTHER: 'Other',
-  INVEST: 'Invest',
-  DONATE: 'Donate',
-  PAY_DEBTS: 'Pay Debts',
-  PAY_BILLS: 'Pay Bills',
-  PERSONAL_DEVELOPMENT: 'Personal Development',
-  ENTERTAINMENT: 'Entertainment'
-}}
+// ayer lave el auto costo $ 1234 y tardaron 2 horas
+// ayer compre un pancho por $ 1234, lo espere 15' y lo comí en la plaza
+const TEMPLATE = `
+Eres un clasificador de gastos recibes un input sobre el gasto y solo debes responder en formato json, si la fecha no esta deja en blanco el valor y nunca debes dar información adicional.
 
-Te paso un mensaje sobre el gasto y deber responder en formato json.
-ej: 
+CATEGORIES: SAVE | RENT | FOOD | SUBSCRIPTIONS | TRANSPORT | CLOTHES | HEALTH | TRAVEL | CAR | DINNING_OUT | GIFTS | OTHER | INVEST | DONATE | PAY_DEBTS | PAY_BILLS | PERSONAL_DEVELOPMENT | ENTERTAINMENT
+
+ejemplo de input y output: 
 input: "18/11/2023: Comida $3000"
 output: {{
     date: '18/11/2023',
@@ -46,6 +44,7 @@ output: {{
     categories: 'FOOD',
     amount: 3000
   }}
+
 Current conversation:
 {chat_history}
  
@@ -65,14 +64,7 @@ export async function POST(req: NextRequest) {
   const currentMessageContent = messages[messages.length - 1].content;
  
   const prompt = PromptTemplate.fromTemplate(TEMPLATE);
-  /**
-   * See a full list of supported models at:
-   * https://js.langchain.com/docs/modules/model_io/models/
-   */
-  const model = new ChatOpenAI({
-    temperature: 0.2,
-  });
- 
+
   /**
    * Chat models stream message chunks rather than bytes, so this
    * output parser handles serialization and encoding.
