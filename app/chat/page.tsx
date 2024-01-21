@@ -6,9 +6,9 @@ const Chat = () => {
   const { messages, input, handleInputChange, handleSubmit } = useChat();
 
   return (
-    <div className="flex flex-col"
+    <div className="flex flex-col text-gray-800"
     >
-      <div className="flex-grow bg-red-300 flex-auto">
+      <div className="flex-grow bg-green-50 flex-auto">
         <ul className="list-none leading-10 overflow-auto h-[calc(100vh-200px)]">
           {messages.map((m, index) => (
             <li key={index}>

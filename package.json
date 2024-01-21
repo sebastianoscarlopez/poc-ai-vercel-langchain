@@ -12,10 +12,12 @@
     "@langchain/community": "^0.0.15",
     "@langchain/openai": "^0.0.10",
     "ai": "^2.2.31",
+    "langchain": "^0.1.0",
     "next": "14.0.4",
     "openai": "^4.24.1",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "typescript": "^5",
